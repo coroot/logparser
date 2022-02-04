@@ -76,7 +76,7 @@ func (m *MultilineCollector) Add(entry LogEntry) {
 func (m *MultilineCollector) add(entry LogEntry) {
 	if len(m.lines) == 0 {
 		m.level = GuessLevel(entry.Content)
-		if m.level == LevelUnknown && entry.Level != "" && entry.Level != LevelUnknown {
+		if m.level == LevelUnknown && entry.Level != LevelUnknown {
 			m.level = entry.Level
 		}
 		m.isFirstLineContainsTimestamp = containsTimestamp(entry.Content)

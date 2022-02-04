@@ -5,19 +5,35 @@ import (
 	"unicode"
 )
 
-type Level string
+type Level int
 
 const (
-	LevelUnknown  Level = "unknown"
-	LevelDebug    Level = "debug"
-	LevelInfo     Level = "info"
-	LevelWarning  Level = "warning"
-	LevelError    Level = "error"
-	LevelCritical Level = "critical"
+	LevelUnknown Level = iota
+	LevelCritical
+	LevelError
+	LevelWarning
+	LevelInfo
+	LevelDebug
 
 	maxLineLenForGuessingLevel = 255
 	guessLevelInFields         = 5
 )
+
+func (l Level) String() string {
+	switch l {
+	case LevelCritical:
+		return "critical"
+	case LevelError:
+		return "error"
+	case LevelWarning:
+		return "warning"
+	case LevelInfo:
+		return "info"
+	case LevelDebug:
+		return "debug"
+	}
+	return "unknown"
+}
 
 var (
 	glogLevelsMapping = map[byte]Level{
