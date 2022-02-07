@@ -22,6 +22,7 @@ func TestGuessLevelRedis(t *testing.T) {
 }
 
 func TestGuessLevel(t *testing.T) {
+	assert.Equal(t, LevelError, GuessLevel(`[Sat Dec 04 04:51:18 2020] [error] mod_jk child workerEnv in error state 6`))
 	assert.Equal(t, LevelInfo, GuessLevel(`[info:2016-02-16T16:04:05.930-08:00] Some log text here`))
 	assert.Equal(t, LevelInfo, GuessLevel(`2016-02-04T06:51:03.053580605Z" level=info msg="GET /containers/json`))
 	assert.Equal(t, LevelError, GuessLevel(`2016-02-04T07:53:57.505612354Z" level=error msg="HTTP Error" err="No such image: -f" statusCode=404`))

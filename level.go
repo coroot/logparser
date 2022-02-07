@@ -16,7 +16,7 @@ const (
 	LevelDebug
 
 	maxLineLenForGuessingLevel = 255
-	guessLevelInFields         = 5
+	guessLevelInFields         = 7
 )
 
 func (l Level) String() string {
@@ -91,7 +91,7 @@ func GuessLevel(line string) Level {
 			switch sf[:4] {
 			case "debu":
 				return LevelDebug
-			case "info":
+			case "info", "noti":
 				return LevelInfo
 			case "warn":
 				return LevelWarning
