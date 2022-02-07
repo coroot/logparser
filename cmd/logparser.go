@@ -9,12 +9,15 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
 func main() {
 	screenWidth := flag.Int("w", 120, "terminal width")
+	maxLinesPerMessage := flag.Int("l", 100, "max lines per message")
+
 	flag.Parse()
 
 	reader := bufio.NewReader(os.Stdin)
@@ -38,7 +41,7 @@ func main() {
 
 	order(counters)
 
-	output(counters, *screenWidth, d)
+	output(counters, *screenWidth, *maxLinesPerMessage, d)
 }
 
 func order(counters []logparser.LogCounter) {
@@ -51,7 +54,7 @@ func order(counters []logparser.LogCounter) {
 	})
 }
 
-func output(counters []logparser.LogCounter, screenWidth int, duration time.Duration) {
+func output(counters []logparser.LogCounter, screenWidth, maxLinesPerMessage int, duration time.Duration) {
 	grandTotal, total, max := 0, 0, 0
 	for _, c := range counters {
 		grandTotal += c.Messages
@@ -63,22 +66,23 @@ func output(counters []logparser.LogCounter, screenWidth int, duration time.Dura
 			max = c.Messages
 		}
 	}
-	barWidth := 30
+	barWidth := 20
 	lineWidth := screenWidth - barWidth
+	messagesNumFmt := fmt.Sprintf("%%%dd", len(strconv.Itoa(max)))
 	for _, c := range counters {
 		if c.Sample == "" {
 			continue
 		}
 		w := c.Messages * barWidth / max
 		bar := strings.Repeat("▇", w+1) + strings.Repeat(" ", barWidth-w)
-		prefix := colorize(c.Level, "%s %d (%.2f%%)\t", bar, c.Messages, float64(c.Messages*100)/float64(total))
+		prefix := colorize(c.Level, "%s "+messagesNumFmt+" (%2d%%) ", bar, c.Messages, int(float64(c.Messages*100)/float64(total)))
 		sample := ""
 		for i, line := range strings.Split(c.Sample, "\n") {
 			if len(line) > lineWidth {
 				line = line[:lineWidth] + "..."
 			}
 			sample += line + "\n" + strings.Repeat(" ", len(prefix))
-			if i > 10 {
+			if i > maxLinesPerMessage {
 				sample += "...\n"
 				break
 			}
