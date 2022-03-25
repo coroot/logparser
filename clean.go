@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	lookForTimestampLimit = 30
+)
+
 var (
 	timestampRegexes = []*regexp.Regexp{
 		regexp.MustCompile(`(^|\s)\d{2}:\d{2}(:\d{2}[^\s"']*)?`),
@@ -28,6 +32,9 @@ func clean(line string) string {
 }
 
 func containsTimestamp(line string) bool {
+	if len(line) > lookForTimestampLimit {
+		line = line[:lookForTimestampLimit]
+	}
 	for _, re := range timestampRegexes {
 		if re.MatchString(line) {
 			return true

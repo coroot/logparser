@@ -166,4 +166,13 @@ Caused by: java.sql.SQLException: Violation of unique constraint MY_ENTITY_UK_1:
 	writeByLine(m, dateStr+javaStackTraceStr)
 	msg = <-m.Messages
 	assert.Equal(t, javaStackTraceStr, msg.Content)
+
+	data := `Order response: {"statusCode":406,"body":{"timestamp":1648205755430,"status":406,"error":"Not Acceptable","exception":"works.weave.socks.orders.controllers.OrdersController$PaymentDeclinedException","message":"Payment declined: amount exceeds 100.00","path":"/orders"},"headers":{"x-application-context":"orders:80","content-type":"application/json;charset=UTF-8","transfer-encoding":"chunked","date":"Fri, 25 Mar 2022 10:55:55 GMT","connection":"close"},"request":{"uri":{"protocol":"http:","slashes":true,"auth":null,"host":"orders","port":80,"hostname":"orders","hash":null,"search":null,"query":null,"pathname":"/orders","path":"/orders","href":"http://orders/orders"},"method":"POST","headers":{"accept":"application/json","content-type":"application/json","content-length":232}}}
+Order response: {"timestamp":1648205755430,"status":406,"error":"Not Acceptable","exception":"works.weave.socks.orders.controllers.OrdersController$PaymentDeclinedException","message":"Payment declined: amount exceeds 100.00","path":"/orders"}
+`
+	writeByLine(m, data)
+	msg = <-m.Messages
+	assert.Equal(t,
+		clean(strings.Split(data, "\n")[0]),
+		msg.Content)
 }
