@@ -25,8 +25,6 @@ var (
 
 	hex  = regexp.MustCompile(`^[a-fA-F0-9]{4,}$`)
 	uuid = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
-	num  = regexp.MustCompile(`\d+`)
-	word = regexp.MustCompile(`^[a-zA-Z][a-zA-Z\._-]*[a-zA-Z]$`)
 )
 
 type Pattern struct {
@@ -77,20 +75,63 @@ func NewPattern(input string) *Pattern {
 		if hex.MatchString(p) || uuid.MatchString(p) {
 			continue
 		}
-		p = num.ReplaceAllLiteralString(p, "")
-		if word.MatchString(p) {
+		p = removeDigits(p)
+		if isWord(p) {
 			pattern.words = append(pattern.words, p)
 		}
 	}
 	return pattern
 }
 
-func removeQuotedAndBrackets(data string) string {
-	var res bytes.Buffer
+// like regexp match to `^[a-zA-Z][a-zA-Z._-]*[a-zA-Z]$`, but much faster
+func isWord(s string) bool {
+	l := len(s) - 1
+	var firstLast int
+	for i, r := range s {
+		switch i {
+		case 0, l:
+			switch {
+			case r >= 'A' && r <= 'Z':
+				firstLast++
+			case r >= 'a' && r <= 'z':
+				firstLast++
+			default:
+				return false
+			}
+		default:
+			switch {
+			case r >= 'A' && r <= 'Z':
+			case r >= 'a' && r <= 'z':
+			case r == '.':
+			case r == '_':
+			case r == '-':
+			default:
+				return false
+			}
+		}
+	}
+	return firstLast == 2
+}
+
+func removeDigits(s string) string {
+	res := bytes.NewBufferString(s)
+	res.Reset()
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			continue
+		}
+		res.WriteRune(r)
+	}
+	return res.String()
+}
+
+func removeQuotedAndBrackets(s string) string {
+	res := bytes.NewBufferString(s)
+	res.Reset()
 	var quote, prev rune
 	var seenBrackets []rune
 	var l int
-	for i, r := range data {
+	for i, r := range s {
 		switch r {
 		case lsbrack, lpar, lcur:
 			if quote == 0 {
@@ -114,7 +155,7 @@ func removeQuotedAndBrackets(data string) string {
 		case dquote, squote:
 			prev = 0
 			if i > 0 {
-				prev = rune(data[i-1])
+				prev = rune(s[i-1])
 			}
 			if prev != bslash && len(seenBrackets) == 0 {
 				if quote == 0 {
