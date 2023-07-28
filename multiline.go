@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 var (
@@ -57,6 +58,10 @@ func (m *MultilineCollector) dispatch(ctx context.Context) {
 }
 
 func (m *MultilineCollector) Add(entry LogEntry) {
+	if !utf8.ValidString(entry.Content) {
+		return
+	}
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
