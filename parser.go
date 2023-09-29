@@ -3,11 +3,13 @@ package logparser
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 type LogEntry struct {
-	Content string
-	Level   Level
+	Timestamp time.Time
+	Content   string
+	Level     Level
 }
 
 type LogCounter struct {
@@ -26,10 +28,18 @@ type Parser struct {
 	multilineCollector *MultilineCollector
 
 	stop func()
+
+	onMsgCb OnMsgCallbackF
 }
 
-func NewParser(ch <-chan LogEntry, decoder Decoder) *Parser {
-	p := &Parser{decoder: decoder, patterns: map[patternKey]*patternStat{}}
+type OnMsgCallbackF func(ts time.Time, level Level, patternHash string, msg string)
+
+func NewParser(ch <-chan LogEntry, decoder Decoder, onMsgCallback OnMsgCallbackF) *Parser {
+	p := &Parser{
+		decoder:  decoder,
+		patterns: map[patternKey]*patternStat{},
+		onMsgCb:  onMsgCallback,
+	}
 	ctx, stop := context.WithCancel(context.Background())
 	p.stop = stop
 	p.multilineCollector = NewMultilineCollector(ctx, multilineCollectorTimeout)
@@ -79,6 +89,9 @@ func (p *Parser) inc(msg Message) {
 			p.patterns[key] = &patternStat{}
 		}
 		p.patterns[key].messages++
+		if p.onMsgCb != nil {
+			p.onMsgCb(msg.Timestamp, msg.Level, "", msg.Content)
+		}
 		return
 	}
 
@@ -96,6 +109,9 @@ func (p *Parser) inc(msg Message) {
 			stat = &patternStat{pattern: pattern, sample: msg.Content}
 			p.patterns[key] = stat
 		}
+	}
+	if p.onMsgCb != nil {
+		p.onMsgCb(msg.Timestamp, msg.Level, key.hash, msg.Content)
 	}
 	stat.messages++
 }

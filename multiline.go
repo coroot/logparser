@@ -13,12 +13,14 @@ var (
 )
 
 type Message struct {
-	Content string
-	Level   Level
+	Timestamp time.Time
+	Content   string
+	Level     Level
 }
 
 type MultilineCollector struct {
 	Messages                     chan Message
+	ts                           time.Time
 	level                        Level
 	lines                        []string
 	isFirstLineContainsTimestamp bool
@@ -80,26 +82,18 @@ func (m *MultilineCollector) Add(entry LogEntry) {
 
 func (m *MultilineCollector) add(entry LogEntry) {
 	if len(m.lines) == 0 {
+		m.ts = entry.Timestamp
 		m.level = GuessLevel(entry.Content)
 		if m.level == LevelUnknown && entry.Level != LevelUnknown {
 			m.level = entry.Level
 		}
 		m.isFirstLineContainsTimestamp = containsTimestamp(entry.Content)
 	}
-	switch m.level {
-	case LevelCritical, LevelError, LevelWarning:
-		if len(m.lines) == 0 {
-			m.appendLine(clean(entry.Content), entry.Content)
-		} else {
-			m.appendLine(entry.Content, entry.Content)
-		}
-	default:
-		m.appendLine("", entry.Content)
-	}
+	m.appendLine(entry.Content)
 	m.lastReceiveTime = time.Now()
 }
 
-func (m *MultilineCollector) appendLine(value, rawValue string) {
+func (m *MultilineCollector) appendLine(value string) {
 	m.lines = append(m.lines, value)
 }
 
@@ -145,14 +139,16 @@ func (m *MultilineCollector) flushMessage() {
 	}
 	content := strings.TrimSpace(strings.Join(m.lines, "\n"))
 	msg := Message{
-		Content: content,
-		Level:   m.level,
+		Timestamp: m.ts,
+		Content:   content,
+		Level:     m.level,
 	}
 	m.reset()
 	m.Messages <- msg
 }
 
 func (m *MultilineCollector) reset() {
+	m.ts = time.Time{}
 	m.lines = m.lines[:0]
 	m.isFirstLineContainsTimestamp = false
 	m.level = LevelUnknown

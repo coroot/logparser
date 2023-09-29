@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func writeByLine(m *MultilineCollector, data string) {
-	for _, line := range strings.Split(data, "\n") {
-		m.Add(LogEntry{Content: line, Level: LevelUnknown})
+func writeByLine(m *MultilineCollector, data string, ts time.Time) {
+	for i, line := range strings.Split(data, "\n") {
+		m.Add(LogEntry{Timestamp: ts.Add(time.Millisecond * time.Duration(i)), Content: line, Level: LevelUnknown})
 	}
 }
 
@@ -19,8 +19,7 @@ func TestMultilineCollector(t *testing.T) {
 	m := NewMultilineCollector(ctx, 10*time.Millisecond)
 	defer cancel()
 
-	dateStr := "2020-03-20 08:48:57,067 "
-	tracebackStr := `ERROR [django.request:222] log 46 140452532862280 Internal Server Error: /article
+	tracebackStr := `2020-03-20 08:48:57,067 ERROR [django.request:222] log 46 140452532862280 Internal Server Error: /article
 Traceback (most recent call last):
   File "/usr/local/lib/python3.8/site-packages/django/db/backends/base/base.py", line 220, in ensure_connection
     self.connect()
@@ -79,28 +78,28 @@ Traceback (most recent call last):
     super(Connection, self).__init__(*args, **kwargs2)
 django.db.utils.OperationalError: (1040, 'Too many connections')`
 
-	writeByLine(m, dateStr+tracebackStr)
+	writeByLine(m, tracebackStr, time.Unix(100500, 0))
 	msg := <-m.Messages
 	assert.Equal(t, tracebackStr, msg.Content)
+	assert.Equal(t, int64(100500), msg.Timestamp.Unix())
 
-	tracebackStr = `ERROR:__main__:Traceback (most recent call last):
+	tracebackStr = `2020-03-20 08:48:57,067 ERROR:__main__:Traceback (most recent call last):
   File "<stdin>", line 2, in <module>
   File "<stdin>", line 2, in do_something_that_might_error
   File "<stdin>", line 2, in raise_error
 RuntimeError: something bad happened!`
-	writeByLine(m, dateStr+tracebackStr)
+	writeByLine(m, tracebackStr, time.Unix(0, 0))
 	msg = <-m.Messages
 	assert.Equal(t, tracebackStr, msg.Content)
 
 	m.Add(LogEntry{Content: "E0504 07:38:36.184861       1 replica_set.go:450] starting worker #224", Level: LevelUnknown})
 	m.Add(LogEntry{Content: "E0504 07:38:36.184861       1 replica_set.go:450] starting worker #225", Level: LevelUnknown})
 	msg = <-m.Messages
-	assert.Equal(t, "E0504 1 replica_set.go:450] starting worker #224", msg.Content)
+	assert.Equal(t, "E0504 07:38:36.184861       1 replica_set.go:450] starting worker #224", msg.Content)
 	msg = <-m.Messages
-	assert.Equal(t, "E0504 1 replica_set.go:450] starting worker #225", msg.Content)
+	assert.Equal(t, "E0504 07:38:36.184861       1 replica_set.go:450] starting worker #225", msg.Content)
 
-	dateStr = "2020-03-31 11:35:06.158 "
-	javaStackTraceStr := `[ERROR] javax.servlet.ServletException: Something bad happened
+	javaStackTraceStr := `2020-03-31 11:35:06.158 [ERROR] javax.servlet.ServletException: Something bad happened
 	at com.example.myproject.OpenSessionInViewFilter.doFilter(OpenSessionInViewFilter.java:60)
 	at org.mortbay.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1157)
 	at com.example.myproject.ExceptionHandlerFilter.doFilter(ExceptionHandlerFilter.java:28)
@@ -163,16 +162,14 @@ Caused by: java.sql.SQLException: Violation of unique constraint MY_ENTITY_UK_1:
 	at org.hibernate.id.insert.AbstractSelectingDelegate.performInsert(AbstractSelectingDelegate.java:57)
 	... 54 more`
 
-	writeByLine(m, dateStr+javaStackTraceStr)
+	writeByLine(m, javaStackTraceStr, time.Unix(0, 0))
 	msg = <-m.Messages
 	assert.Equal(t, javaStackTraceStr, msg.Content)
 
 	data := `Order response: {"statusCode":406,"body":{"timestamp":1648205755430,"status":406,"error":"Not Acceptable","exception":"works.weave.socks.orders.controllers.OrdersController$PaymentDeclinedException","message":"Payment declined: amount exceeds 100.00","path":"/orders"},"headers":{"x-application-context":"orders:80","content-type":"application/json;charset=UTF-8","transfer-encoding":"chunked","date":"Fri, 25 Mar 2022 10:55:55 GMT","connection":"close"},"request":{"uri":{"protocol":"http:","slashes":true,"auth":null,"host":"orders","port":80,"hostname":"orders","hash":null,"search":null,"query":null,"pathname":"/orders","path":"/orders","href":"http://orders/orders"},"method":"POST","headers":{"accept":"application/json","content-type":"application/json","content-length":232}}}
 Order response: {"timestamp":1648205755430,"status":406,"error":"Not Acceptable","exception":"works.weave.socks.orders.controllers.OrdersController$PaymentDeclinedException","message":"Payment declined: amount exceeds 100.00","path":"/orders"}
 `
-	writeByLine(m, data)
+	writeByLine(m, data, time.Unix(0, 0))
 	msg = <-m.Messages
-	assert.Equal(t,
-		clean(strings.Split(data, "\n")[0]),
-		msg.Content)
+	assert.Equal(t, strings.Split(data, "\n")[0], msg.Content)
 }

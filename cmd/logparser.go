@@ -22,7 +22,7 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 	ch := make(chan logparser.LogEntry)
-	parser := logparser.NewParser(ch, nil)
+	parser := logparser.NewParser(ch, nil, nil)
 	t := time.Now()
 	for {
 		line, err := reader.ReadString('\n')
@@ -32,7 +32,7 @@ func main() {
 			}
 			break
 		}
-		ch <- logparser.LogEntry{Content: strings.TrimSuffix(line, "\n"), Level: logparser.LevelUnknown}
+		ch <- logparser.LogEntry{Timestamp: time.Now(), Content: strings.TrimSuffix(line, "\n"), Level: logparser.LevelUnknown}
 	}
 	d := time.Since(t)
 	defer parser.Stop()
