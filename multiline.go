@@ -2,6 +2,7 @@ package logparser
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -33,7 +34,7 @@ type MultilineCollector struct {
 func NewMultilineCollector(ctx context.Context, timeout time.Duration) *MultilineCollector {
 	m := &MultilineCollector{
 		timeout:  timeout,
-		Messages: make(chan Message, 1),
+		Messages: make(chan Message, 100),
 	}
 	go m.dispatch(ctx)
 	return m
@@ -88,6 +89,7 @@ func (m *MultilineCollector) add(entry LogEntry) {
 			m.level = entry.Level
 		}
 		m.isFirstLineContainsTimestamp = containsTimestamp(entry.Content)
+		fmt.Println(m.isFirstLineContainsTimestamp, entry.Content)
 	}
 	m.appendLine(entry.Content)
 	m.lastReceiveTime = time.Now()
