@@ -27,4 +27,5 @@ func TestGuessLevel(t *testing.T) {
 	assert.Equal(t, LevelInfo, GuessLevel(`2016-02-04T06:51:03.053580605Z" level=info msg="GET /containers/json`))
 	assert.Equal(t, LevelError, GuessLevel(`2016-02-04T07:53:57.505612354Z" level=error msg="HTTP Error" err="No such image: -f" statusCode=404`))
 	assert.Equal(t, LevelDebug, GuessLevel(`[2020-06-25 17:35:37,609][DEBUG][action.search            ] [srv] [tweets-100][6]`))
+	assert.Equal(t, LevelError, GuessLevel(`[2023-10-12T09:56:53.393595+00:00] otel-php.ERROR: Export failure {"exception":"[object] (RuntimeException(code: 0): Export retry limit exceeded at /var/www/vendor/open-telemetry/sdk/Common/Export/Http/PsrTransport.php:114)","source":"OpenTelemetry\\Contrib\\Otlp\\SpanExporter"} []`))
 }

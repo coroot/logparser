@@ -80,7 +80,7 @@ func GuessLevel(line string) Level {
 
 	for _, f := range fields[:limit] {
 		subfields := strings.FieldsFunc(f, func(r rune) bool {
-			return r == ']' || r == ')' || r == ';' || r == '|' || r == ':' || r == ','
+			return r == ']' || r == ')' || r == ';' || r == '|' || r == ':' || r == ',' || r == '.'
 		})
 		for _, sf := range subfields {
 			sf = strings.TrimLeft(strings.ToLower(sf), "\"[('")
