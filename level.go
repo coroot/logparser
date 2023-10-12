@@ -83,7 +83,7 @@ func GuessLevel(line string) Level {
 			return r == ']' || r == ')' || r == ';' || r == '|' || r == ':' || r == ',' || r == '.'
 		})
 		for _, sf := range subfields {
-			sf = strings.TrimLeft(strings.ToLower(sf), "\"[('")
+			sf = strings.TrimLeft(strings.ToLower(sf), "\"[(<'")
 			sf = strings.TrimPrefix(sf, "level=")
 			if len(sf) < 4 {
 				continue
