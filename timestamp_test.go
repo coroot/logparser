@@ -24,4 +24,5 @@ func Test_containsTimestamp(t *testing.T) {
 	assert.True(t, containsTimestamp("2005-08-09T18:31:42-03:30"))
 	assert.True(t, containsTimestamp("2005-08-09T18:31:42"))
 	assert.True(t, containsTimestamp("2005-08-09T18:31:42.201"))
+	assert.True(t, containsTimestamp(`10/Oct/2000:13:55:36 -0700`))
 }

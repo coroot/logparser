@@ -19,6 +19,7 @@ var (
 		regexp.MustCompile(`\d{2}-\d{2}-\d{4}`),
 		regexp.MustCompile(`\d{2}/\d{2}/\d{4}`),
 		regexp.MustCompile(`\d{2}\.\d{2}\.\d{4}`),
+		regexp.MustCompile(`\d{2}/[A-Z][a-z]{2}/\d{4}`),
 	}
 )
 
