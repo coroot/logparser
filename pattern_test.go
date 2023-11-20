@@ -82,6 +82,14 @@ func TestPatternWeakEqual(t *testing.T) {
 	assert.False(t, NewPattern("foo bar baz").WeakEqual(NewPattern("baz bar foo")))
 }
 
+func BenchmarkPatternWeakEqual(b *testing.B) {
+	p1 := NewPattern("foo one two bar buz")
+	p2 := NewPattern("foo three four bar buz")
+	for n := 0; n < b.N; n++ {
+		p1.WeakEqual(p2)
+	}
+}
+
 func TestPatternRemoveQuotedAndBrackets(t *testing.T) {
 	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted' bar`))
 	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted \'baz\'' bar`))

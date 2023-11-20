@@ -53,16 +53,16 @@ func (p *Pattern) WeakEqual(other *Pattern) bool {
 	if len(p.words) != len(other.words) {
 		return false
 	}
-	var matches int
-	for i, op := range other.words {
-		if p.words[i] == op {
-			matches++
+	var diffs int
+	for i, ow := range other.words {
+		if p.words[i] != ow {
+			diffs++
+			if diffs > 1 {
+				return false
+			}
 		}
 	}
-	if matches >= len(p.words)-1 {
-		return true
-	}
-	return false
+	return true
 }
 
 func NewPattern(input string) *Pattern {
