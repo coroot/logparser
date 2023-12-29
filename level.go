@@ -85,20 +85,33 @@ func GuessLevel(line string) Level {
 		for _, sf := range subfields {
 			sf = strings.TrimLeft(strings.ToLower(sf), "\"[(<'")
 			sf = strings.TrimPrefix(sf, "level=")
-			if len(sf) < 4 {
-				continue
-			}
-			switch sf[:4] {
-			case "debu":
-				return LevelDebug
-			case "info", "noti":
-				return LevelInfo
-			case "warn":
-				return LevelWarning
-			case "erro":
-				return LevelError
-			case "crit", "fata":
-				return LevelCritical
+
+			if l := len(sf); l == 3 {
+				switch sf {
+				case "dbg", "trc":
+					return LevelDebug
+				case "inf":
+					return LevelInfo
+				case "wrn":
+					return LevelWarning
+				case "err":
+					return LevelError
+				case "ftl":
+					return LevelCritical
+				}
+			} else if l >= 4 {
+				switch sf[:4] {
+				case "debu":
+					return LevelDebug
+				case "info", "noti":
+					return LevelInfo
+				case "warn":
+					return LevelWarning
+				case "erro":
+					return LevelError
+				case "crit", "fata":
+					return LevelCritical
+				}
 			}
 		}
 	}

@@ -29,4 +29,11 @@ func TestGuessLevel(t *testing.T) {
 	assert.Equal(t, LevelDebug, GuessLevel(`[2020-06-25 17:35:37,609][DEBUG][action.search            ] [srv] [tweets-100][6]`))
 	assert.Equal(t, LevelError, GuessLevel(`[2023-10-12T09:56:53.393595+00:00] otel-php.ERROR: Export failure {"exception":"[object] (RuntimeException(code: 0): Export retry limit exceeded at /var/www/vendor/open-telemetry/sdk/Common/Export/Http/PsrTransport.php:114)","source":"OpenTelemetry\\Contrib\\Otlp\\SpanExporter"} []`))
 	assert.Equal(t, LevelWarning, GuessLevel(`2023.10.12 13:58:41.168802 [ 847 ] {} <Warning> TCPHandler: Using deprecated interserver protocol because the client is too old. Consider upgrading all nodes in cluster.`))
+
+	assert.Equal(t, LevelDebug, GuessLevel("[06:23:18 DBG] message"))
+	assert.Equal(t, LevelInfo, GuessLevel("[06:23:18 INF] message"))
+	assert.Equal(t, LevelWarning, GuessLevel("[06:23:18 WRN] message"))
+	assert.Equal(t, LevelError, GuessLevel("[06:23:18 ERR] message"))
+	assert.Equal(t, LevelCritical, GuessLevel("[06:23:18 FTL] message"))
+
 }
