@@ -42,7 +42,7 @@ func NewParser(ch <-chan LogEntry, decoder Decoder, onMsgCallback OnMsgCallbackF
 	}
 	ctx, stop := context.WithCancel(context.Background())
 	p.stop = stop
-	p.multilineCollector = NewMultilineCollector(ctx, multilineCollectorTimeout)
+	p.multilineCollector = NewMultilineCollector(ctx, multilineCollectorTimeout, multilineCollectorLimit)
 
 	go func() {
 		var err error

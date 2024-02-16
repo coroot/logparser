@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Test_containsTimestamp(t *testing.T) {
+func TestContainsTimestamp(t *testing.T) {
 	assert.True(t, containsTimestamp("18:31:42+03"))
 	assert.True(t, containsTimestamp("18:31:42-03"))
 	assert.True(t, containsTimestamp("18:31:42+03:30"))
@@ -39,7 +39,7 @@ func Test_containsTimestamp(t *testing.T) {
 
 }
 
-func Benchmark_containsTimestamp(b *testing.B) {
+func BenchmarkContainsTimestamp(b *testing.B) {
 	l := `10.42.0.21 - - [30/Oct/2023:11:55:47 +0000] "GET / HTTP/1.1" 200 612 "-" "-" "-"`
 	for n := 0; n < b.N; n++ {
 		containsTimestamp(l)
