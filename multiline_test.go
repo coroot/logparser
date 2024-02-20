@@ -326,6 +326,32 @@ func TestMultilineCollectorJS(t *testing.T) {
 	msgs = writeByLine(m, data, time.Unix(0, 0))
 	require.Len(t, msgs, 2)
 	assert.Equal(t, data, msgs[0].Content+"\n"+msgs[1].Content)
+
+	data = `Error: 14 UNAVAILABLE: read ECONNRESET
+    at callErrorFromStatus (/app/node_modules/@grpc/grpc-js/build/src/call.js:31:19)
+    at Object.onReceiveStatus (/app/node_modules/@grpc/grpc-js/build/src/client.js:192:76)
+    at Object.onReceiveStatus (/app/node_modules/@grpc/grpc-js/build/src/client-interceptors.js:360:141)
+    at Object.onReceiveStatus (/app/node_modules/@grpc/grpc-js/build/src/client-interceptors.js:323:181)
+    at /app/node_modules/@grpc/grpc-js/build/src/resolving-call.js:99:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:77:11)
+for call at
+    at ServiceClientImpl.makeUnaryRequest (/app/node_modules/@grpc/grpc-js/build/src/client.js:160:32)
+    at ServiceClientImpl.<anonymous> (/app/node_modules/@grpc/grpc-js/build/src/make-client.js:105:19)
+    at /app/node_modules/@opentelemetry/instrumentation-grpc/build/src/grpc-js/clientUtils.js:131:31
+    at /app/node_modules/@opentelemetry/instrumentation-grpc/build/src/grpc-js/index.js:233:209
+    at AsyncLocalStorage.run (node:async_hooks:338:14)
+    at AsyncLocalStorageContextManager.with (/app/node_modules/@opentelemetry/context-async-hooks/build/src/AsyncLocalStorageContextManager.js:33:40)
+    at ContextAPI.with (/app/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at ServiceClientImpl.clientMethodTrace [as getProduct] (/app/node_modules/@opentelemetry/instrumentation-grpc/build/src/grpc-js/index.js:233:42)
+    at /app/.next/server/chunks/813.js:65:58
+    at new Promise (<anonymous>) {
+  code: 14,
+  details: 'read ECONNRESET',
+  metadata: Metadata { internalRepr: Map(0) {}, options: {} }
+}`
+	msgs = writeByLine(m, data, time.Unix(0, 0))
+	require.Len(t, msgs, 1)
+	assert.Equal(t, data, msgs[0].Content)
 }
 
 func TestMultilineCollectorGO(t *testing.T) {

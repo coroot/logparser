@@ -115,7 +115,7 @@ func (m *MultilineCollector) add(entry LogEntry) {
 }
 
 func (m *MultilineCollector) isNextMessage(l string) bool {
-	if l == "" || strings.HasPrefix(l, "\t") || strings.HasPrefix(l, "  ") {
+	if l == "" || l == "}" || strings.HasPrefix(l, "\t") || strings.HasPrefix(l, "  ") {
 		return false
 	}
 
@@ -124,6 +124,10 @@ func (m *MultilineCollector) isNextMessage(l string) bool {
 	}
 
 	if strings.HasPrefix(l, "Caused by: ") {
+		return false
+	}
+
+	if strings.HasPrefix(l, "for call at") {
 		return false
 	}
 
