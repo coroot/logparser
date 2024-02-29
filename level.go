@@ -109,8 +109,15 @@ func GuessLevel(line string) Level {
 					return LevelWarning
 				case "erro":
 					return LevelError
-				case "crit", "fata":
+				case "crit":
 					return LevelCritical
+				case "emer", "fata", "aler":
+					if l >= 5 {
+						switch sf[:5] {
+						case "emerg", "fatal", "alert":
+							return LevelCritical
+						}
+					}
 				}
 			}
 		}

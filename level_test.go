@@ -36,4 +36,8 @@ func TestGuessLevel(t *testing.T) {
 	assert.Equal(t, LevelError, GuessLevel("[06:23:18 ERR] message"))
 	assert.Equal(t, LevelCritical, GuessLevel("[06:23:18 FTL] message"))
 
+	assert.Equal(t, LevelCritical, GuessLevel(`2024/02/29 11:01:03 [emerg] 1#1: duplicate location "/loc-path" in /etc/nginx/conf.d/default.conf:33`))
+	assert.Equal(t, LevelCritical, GuessLevel(`nginx: [alert] could not open error log file: open() "/var/log/nginx/error.log" failed (13: Permission denied)`))
+	assert.Equal(t, LevelCritical, GuessLevel(`2022/05/14 07:08:37 [crit] 6689#6689: *16721837 SSL_do_handshake() failed (SSL: error:1420918C:SSL routines:tls_early_post_process_client_hello:version too low) while SSL handshaking`))
+	assert.Equal(t, LevelError, GuessLevel(`2009/01/01 19:45:44 [error]  29874#0: *98 open() "/var/www/one/nonexistent.html" failed (2: No such file or directory), client: 11.22.33.44, server: one.org, request: "GET /nonexistent.html HTTP/1.1", host: "one.org"`))
 }
