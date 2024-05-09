@@ -9,7 +9,9 @@ import (
 )
 
 const (
-	minWordLen = 2
+	minWordLen         = 2
+	patternMaxDiff     = 1
+	patternCheckFirstN = 100
 )
 
 var (
@@ -54,10 +56,13 @@ func (p *Pattern) WeakEqual(other *Pattern) bool {
 		return false
 	}
 	var diffs int
-	for i, ow := range other.words {
-		if p.words[i] != ow {
+	for i := range other.words {
+		if i > patternCheckFirstN {
+			return true
+		}
+		if p.words[i] != other.words[i] {
 			diffs++
-			if diffs > 1 {
+			if diffs > patternMaxDiff {
 				return false
 			}
 		}
