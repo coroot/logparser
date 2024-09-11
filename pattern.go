@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	minWordLen         = 2
-	patternMaxDiff     = 1
-	patternCheckFirstN = 100
+	patternMaxWords  = 100
+	patterMinWordLen = 2
+	patternMaxDiff   = 1
 )
 
 var (
@@ -57,9 +57,6 @@ func (p *Pattern) WeakEqual(other *Pattern) bool {
 	}
 	var diffs int
 	for i := range other.words {
-		if i > patternCheckFirstN {
-			return true
-		}
 		if p.words[i] != other.words[i] {
 			diffs++
 			if diffs > patternMaxDiff {
@@ -74,18 +71,26 @@ func NewPattern(input string) *Pattern {
 	pattern := &Pattern{}
 	for _, p := range strings.Fields(removeQuotedAndBrackets(input)) {
 		p = strings.TrimRight(p, "=:],;")
-		if len(p) < minWordLen {
+		if len(p) < patterMinWordLen {
 			continue
 		}
 		if hex.MatchString(p) || uuid.MatchString(p) {
 			continue
 		}
 		p = removeDigits(p)
-		if isWord(p) {
-			pattern.words = append(pattern.words, p)
+		if !isWord(p) {
+			continue
+		}
+		pattern.words = append(pattern.words, p)
+		if len(pattern.words) >= patternMaxWords {
+			break
 		}
 	}
 	return pattern
+}
+
+func NewPatternFromWords(input string) *Pattern {
+	return &Pattern{words: strings.Split(input, " ")}
 }
 
 // like regexp match to `^[a-zA-Z][a-zA-Z._-]*[a-zA-Z]$`, but much faster
