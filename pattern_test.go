@@ -73,6 +73,11 @@ func TestPattern(t *testing.T) {
 	assert.Equal(t,
 		"Dec gke-foo---bcbd-node-eoj startupscript Finished running startup script",
 		NewPattern(`Dec 21 23:17:22 gke-foo-1-1-4b5cbd14-node-4eoj startupscript: Finished running startup script /var/run/google.startup.script`).String())
+
+	assert.Equal(t,
+		"foo bar",
+		NewPattern(`foo @ 0x000000000daffc3b 0x1 0xaa 0aa3f bar`).String(),
+	)
 }
 
 func TestPatternWeakEqual(t *testing.T) {

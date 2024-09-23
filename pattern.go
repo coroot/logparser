@@ -25,8 +25,9 @@ var (
 	lcur    = '{'
 	rcur    = '}'
 
-	hex  = regexp.MustCompile(`^[a-fA-F0-9]{4,}$`)
-	uuid = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
+	hexWithPrefix = regexp.MustCompile(`^0x[a-fA-F0-9]+$`)
+	hex           = regexp.MustCompile(`^[a-fA-F0-9]{4,}$`)
+	uuid          = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
 )
 
 type Pattern struct {
@@ -74,7 +75,7 @@ func NewPattern(input string) *Pattern {
 		if len(p) < patterMinWordLen {
 			continue
 		}
-		if hex.MatchString(p) || uuid.MatchString(p) {
+		if hexWithPrefix.MatchString(p) || hex.MatchString(p) || uuid.MatchString(p) {
 			continue
 		}
 		p = removeDigits(p)
