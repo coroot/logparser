@@ -5,13 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/coroot/logparser"
 	"io"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/coroot/logparser"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 	ch := make(chan logparser.LogEntry)
-	parser := logparser.NewParser(ch, nil, nil)
+	parser := logparser.NewParser(ch, nil, nil, time.Second)
 	t := time.Now()
 	for {
 		line, err := reader.ReadString('\n')

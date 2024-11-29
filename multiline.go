@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	multilineCollectorTimeout = time.Millisecond * 100
-	multilineCollectorLimit   = 64 * 1024
+	multilineCollectorLimit = 64 * 1024
 )
 
 type Message struct {
