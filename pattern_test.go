@@ -1,8 +1,10 @@
 package logparser
 
 import (
-	"github.com/stretchr/testify/assert"
+	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPattern(t *testing.T) {
@@ -96,18 +98,19 @@ func BenchmarkPatternWeakEqual(b *testing.B) {
 }
 
 func TestPatternRemoveQuotedAndBrackets(t *testing.T) {
-	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted' bar`))
-	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted \'baz\'' bar`))
-	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo "dquoted" bar`))
-	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo "dquoted \"baz\"" bar`))
-	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo "dquoted 'squoted' " bar`))
-	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted "baz"' bar`))
+	buf := bytes.NewBuffer(nil)
+	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted' bar`, buf))
+	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted \'baz\'' bar`, buf))
+	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo "dquoted" bar`, buf))
+	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo "dquoted \"baz\"" bar`, buf))
+	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo "dquoted 'squoted' " bar`, buf))
+	assert.Equal(t, "foo  bar", removeQuotedAndBrackets(`foo 'squoted "baz"' bar`, buf))
 
-	assert.Equal(t, " msg", removeQuotedAndBrackets(`[nio-8080-exec-9] msg`))
-	assert.Equal(t, "json: ", removeQuotedAndBrackets(`json: {'arr': ['1', '2'], 'str': 'strval', 'age': 20}`))
+	assert.Equal(t, " msg", removeQuotedAndBrackets(`[nio-8080-exec-9] msg`, buf))
+	assert.Equal(t, "json: ", removeQuotedAndBrackets(`json: {'arr': ['1', '2'], 'str': 'strval', 'age': 20}`, buf))
 	assert.Equal(t, " ",
-		removeQuotedAndBrackets(`[Full GC (Allocation Failure) [CMS: 176934K->176934K(176960K), 0.0451364 secs] 253546K->253546K(253632K), [Metaspace: 11797K->11797K(1060864K)], 0.0454767 secs] [Times: user=0.04 sys=0.00, real=0.05 secs]`))
+		removeQuotedAndBrackets(`[Full GC (Allocation Failure) [CMS: 176934K->176934K(176960K), 0.0451364 secs] 253546K->253546K(253632K), [Metaspace: 11797K->11797K(1060864K)], 0.0454767 secs] [Times: user=0.04 sys=0.00, real=0.05 secs]`, buf))
 	assert.Equal(t,
 		"Jun 16 21:41:24 host01 kubelet: W0616 21:41:24.642736     961 reflector.go:341]",
-		removeQuotedAndBrackets(`Jun 16 21:41:24 host01 kubelet[961]: W0616 21:41:24.642736     961 reflector.go:341]`))
+		removeQuotedAndBrackets(`Jun 16 21:41:24 host01 kubelet[961]: W0616 21:41:24.642736     961 reflector.go:341]`, buf))
 }

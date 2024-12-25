@@ -6,12 +6,21 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 const (
 	patternMaxWords  = 100
 	patterMinWordLen = 2
 	patternMaxDiff   = 1
+)
+
+var (
+	buffers = sync.Pool{
+		New: func() interface{} {
+			return new(bytes.Buffer)
+		},
+	}
 )
 
 var (
@@ -38,8 +47,17 @@ type Pattern struct {
 
 func (p *Pattern) String() string {
 	if p.str == nil {
-		s := strings.Join(p.words, " ")
+		buf := buffers.Get().(*bytes.Buffer)
+		buf.Reset()
+		for _, w := range p.words {
+			if buf.Len() > 0 {
+				buf.WriteByte(' ')
+			}
+			buf.WriteString(w)
+		}
+		s := buf.String()
 		p.str = &s
+		buffers.Put(buf)
 	}
 	return *p.str
 }
@@ -70,7 +88,9 @@ func (p *Pattern) WeakEqual(other *Pattern) bool {
 
 func NewPattern(input string) *Pattern {
 	pattern := &Pattern{}
-	for _, p := range strings.Fields(removeQuotedAndBrackets(input)) {
+	buf := buffers.Get().(*bytes.Buffer)
+	buf.Reset()
+	for _, p := range strings.Fields(removeQuotedAndBrackets(input, buf)) {
 		p = strings.TrimRight(p, "=:],;")
 		if len(p) < patterMinWordLen {
 			continue
@@ -78,7 +98,7 @@ func NewPattern(input string) *Pattern {
 		if hexWithPrefix.MatchString(p) || hex.MatchString(p) || uuid.MatchString(p) {
 			continue
 		}
-		p = removeDigits(p)
+		p = removeDigits(p, buf)
 		if !isWord(p) {
 			continue
 		}
@@ -87,6 +107,7 @@ func NewPattern(input string) *Pattern {
 			break
 		}
 	}
+	buffers.Put(buf)
 	return pattern
 }
 
@@ -124,21 +145,19 @@ func isWord(s string) bool {
 	return firstLast == 2
 }
 
-func removeDigits(s string) string {
-	res := bytes.NewBufferString(s)
-	res.Reset()
+func removeDigits(s string, buf *bytes.Buffer) string {
+	buf.Reset()
 	for _, r := range s {
 		if r >= '0' && r <= '9' {
 			continue
 		}
-		res.WriteRune(r)
+		buf.WriteRune(r)
 	}
-	return res.String()
+	return buf.String()
 }
 
-func removeQuotedAndBrackets(s string) string {
-	res := bytes.NewBufferString(s)
-	res.Reset()
+func removeQuotedAndBrackets(s string, buf *bytes.Buffer) string {
+	buf.Reset()
 	var quote, prev rune
 	var seenBrackets []rune
 	var l int
@@ -180,7 +199,7 @@ func removeQuotedAndBrackets(s string) string {
 		if quote != 0 || len(seenBrackets) > 0 {
 			continue
 		}
-		res.WriteRune(r)
+		buf.WriteRune(r)
 	}
-	return res.String()
+	return buf.String()
 }
