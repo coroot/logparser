@@ -9,7 +9,8 @@ func containsTimestamp(line string) bool {
 		line = line[:lookForTimestampLimit]
 	}
 	var digits, colons int
-	for _, r := range line {
+	for i := 0; i < len(line); i++ {
+		r := line[i]
 		switch {
 		case r >= '0' && r <= '9':
 			digits++
