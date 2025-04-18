@@ -2,11 +2,13 @@ package logparser
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func writeByLine(m *MultilineCollector, data string, ts time.Time) []Message {
@@ -398,4 +400,11 @@ func TestMultilineCollectorLimit(t *testing.T) {
 	msgs = writeByLine(m, data, time.Unix(0, 0))
 	require.Len(t, msgs, 1)
 	assert.Equal(t, 100, len(msgs[0].Content))
+
+	data = "I0215 12:33:07.230967" + strings.Repeat(" €", 25)
+	assert.Equal(t, 121, len(data))
+	msgs = writeByLine(m, data, time.Unix(0, 0))
+	require.Len(t, msgs, 1)
+	assert.Equal(t, 97, len(msgs[0].Content))
+	assert.True(t, utf8.ValidString(msgs[0].Content))
 }

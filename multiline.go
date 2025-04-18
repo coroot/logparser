@@ -106,6 +106,12 @@ func (m *MultilineCollector) add(entry LogEntry) {
 	}
 	content := entry.Content
 	if len(content) > remaining {
+		for remaining > 0 && !utf8.RuneStart(content[remaining]) {
+			remaining--
+		}
+		if remaining == 0 {
+			return
+		}
 		content = content[:remaining]
 	}
 	m.lines = append(m.lines, content)
