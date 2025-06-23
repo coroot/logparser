@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/coroot/logparser"
@@ -18,12 +20,24 @@ import (
 func main() {
 	screenWidth := flag.Int("w", 120, "terminal width")
 	maxLinesPerMessage := flag.Int("l", 100, "max lines per message")
+	tailMode := flag.Bool("f", false, "tail mode - continuously read input until interrupted")
+	updateInterval := flag.Duration("i", 1*time.Second, "update interval for tail mode")
 
 	flag.Parse()
 
 	reader := bufio.NewReader(os.Stdin)
 	ch := make(chan logparser.LogEntry)
 	parser := logparser.NewParser(ch, nil, nil, time.Second)
+	defer parser.Stop()
+
+	if *tailMode {
+		runTailMode(reader, ch, parser, *screenWidth, *maxLinesPerMessage, *updateInterval)
+	} else {
+		runRegularMode(reader, ch, parser, *screenWidth, *maxLinesPerMessage)
+	}
+}
+
+func runRegularMode(reader *bufio.Reader, ch chan logparser.LogEntry, parser *logparser.Parser, screenWidth, maxLinesPerMessage int) {
 	t := time.Now()
 	for {
 		line, err := reader.ReadString('\n')
@@ -36,13 +50,66 @@ func main() {
 		ch <- logparser.LogEntry{Timestamp: time.Now(), Content: strings.TrimSuffix(line, "\n"), Level: logparser.LevelUnknown}
 	}
 	d := time.Since(t)
-	defer parser.Stop()
 
 	counters := parser.GetCounters()
-
 	order(counters)
+	output(counters, screenWidth, maxLinesPerMessage, d)
+}
 
-	output(counters, *screenWidth, *maxLinesPerMessage, d)
+func runTailMode(reader *bufio.Reader, ch chan logparser.LogEntry, parser *logparser.Parser, screenWidth, maxLinesPerMessage int, updateInterval time.Duration) {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	updateTicker := time.NewTicker(updateInterval)
+	defer updateTicker.Stop()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					fmt.Println(err)
+				}
+				if errors.Is(err, io.EOF) {
+					time.Sleep(100 * time.Millisecond)
+					continue
+				}
+				return
+			}
+			ch <- logparser.LogEntry{Timestamp: time.Now(), Content: strings.TrimSuffix(line, "\n"), Level: logparser.LevelUnknown}
+		}
+	}()
+
+	startTime := time.Now()
+	for {
+		select {
+		case <-signalChan:
+			duration := time.Since(startTime)
+			counters := parser.GetCounters()
+			order(counters)
+
+			// clean screen
+			fmt.Print("\033[H\033[2J")
+			output(counters, screenWidth, maxLinesPerMessage, duration)
+			fmt.Println("Tail mode terminated.")
+			return
+
+		case <-updateTicker.C:
+			duration := time.Since(startTime)
+			counters := parser.GetCounters()
+			order(counters)
+
+			// clean screen
+			fmt.Print("\033[H\033[2J")
+			output(counters, screenWidth, maxLinesPerMessage, duration)
+			fmt.Println("Press Ctrl+C to exit.")
+
+		case <-done:
+			return
+		}
+	}
 }
 
 func order(counters []logparser.LogCounter) {
