@@ -23,7 +23,7 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 	ch := make(chan logparser.LogEntry)
-	parser := logparser.NewParser(ch, nil, nil, time.Second)
+	parser := logparser.NewParser(ch, nil, nil, time.Second, 256)
 	t := time.Now()
 	for {
 		line, err := reader.ReadString('\n')
