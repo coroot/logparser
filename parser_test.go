@@ -20,16 +20,17 @@ func TestParserCardinalityLimit(t *testing.T) {
 		"error alpha beta gamma",
 		"error delta epsilon zeta",
 		"error eta theta iota",
+		"error kappa lambda mu",
 	}
 	for _, m := range msgs {
 		p.inc(Message{Timestamp: time.Now(), Content: m, Level: LevelError})
 	}
 	assert.Equal(t, 2, p.patternsPerLevel[LevelError])
 
-	fallbackKey := patternKey{level: LevelError, hash: ""}
+	fallbackKey := patternKey{level: LevelError, hash: unclassifiedPatternHash}
 	stat, ok := p.patterns[fallbackKey]
 	require.True(t, ok)
-	assert.Equal(t, 1, stat.messages)
+	assert.Equal(t, 2, stat.messages)
 	assert.Equal(t, unclassifiedPatternLabel, stat.sample)
 
 	counters := p.GetCounters()
@@ -39,4 +40,5 @@ func TestParserCardinalityLimit(t *testing.T) {
 	assert.Equal(t, msgs[0], counters[0].Sample)
 	assert.Equal(t, msgs[1], counters[1].Sample)
 	assert.Equal(t, unclassifiedPatternLabel, counters[2].Sample)
+	assert.Equal(t, unclassifiedPatternHash, counters[2].Hash)
 }

@@ -8,6 +8,7 @@ import (
 
 var (
 	unclassifiedPatternLabel = "unclassified pattern (pattern limit reached)"
+	unclassifiedPatternHash  = "00000000000000000000000000000000"
 )
 
 type LogEntry struct {
@@ -126,7 +127,7 @@ func (p *Parser) getPatternStat(level Level, pattern *Pattern, sample string) (*
 	}
 
 	if p.patternsPerLevel[level] >= p.patternsPerLevelLimit {
-		fallbackKey := patternKey{level: level, hash: ""}
+		fallbackKey := patternKey{level: level, hash: unclassifiedPatternHash}
 		stat := p.patterns[fallbackKey]
 		if stat == nil {
 			stat = &patternStat{sample: unclassifiedPatternLabel}
