@@ -34,19 +34,22 @@ type Parser struct {
 
 	multilineCollector *MultilineCollector
 
+	parseJson bool
+
 	stop func()
 
 	onMsgCb OnMsgCallbackF
 }
 
-type OnMsgCallbackF func(ts time.Time, level Level, patternHash string, msg string)
+type OnMsgCallbackF func(ts time.Time, level Level, patternHash string, msg string, attributes map[string]string)
 
-func NewParser(ch <-chan LogEntry, decoder Decoder, onMsgCallback OnMsgCallbackF, multilineCollectorTimeout time.Duration, patternsPerLevelLimit int) *Parser {
+func NewParser(ch <-chan LogEntry, decoder Decoder, onMsgCallback OnMsgCallbackF, multilineCollectorTimeout time.Duration, patternsPerLevelLimit int, parseJson bool) *Parser {
 	p := &Parser{
 		decoder:               decoder,
 		patterns:              map[patternKey]*patternStat{},
 		patternsPerLevel:      map[Level]int{},
 		patternsPerLevelLimit: patternsPerLevelLimit,
+		parseJson:             parseJson,
 		onMsgCb:               onMsgCallback,
 	}
 	ctx, stop := context.WithCancel(context.Background())
@@ -92,24 +95,44 @@ func (p *Parser) inc(msg Message) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if msg.Level == LevelUnknown || msg.Level == LevelDebug || msg.Level == LevelInfo {
-		key := patternKey{level: msg.Level, hash: ""}
+	content := msg.Content
+	level := msg.Level
+	var attributes map[string]string
+	if jl := p.parseJsonLog(content); jl != nil {
+		if jl.Level != LevelUnknown {
+			level = jl.Level
+		}
+		if jl.Message != "" {
+			content = jl.Message
+		}
+		attributes = jl.Attributes
+	}
+
+	if level == LevelUnknown || level == LevelDebug || level == LevelInfo {
+		key := patternKey{level: level, hash: ""}
 		if stat := p.patterns[key]; stat == nil {
 			p.patterns[key] = &patternStat{}
 		}
 		p.patterns[key].messages++
 		if p.onMsgCb != nil {
-			p.onMsgCb(msg.Timestamp, msg.Level, "", msg.Content)
+			p.onMsgCb(msg.Timestamp, level, "", content, attributes)
 		}
 		return
 	}
 
-	pattern := NewPattern(msg.Content)
-	stat, key := p.getPatternStat(msg.Level, pattern, msg.Content)
+	pattern := NewPattern(content)
+	stat, key := p.getPatternStat(level, pattern, content)
 	if p.onMsgCb != nil {
-		p.onMsgCb(msg.Timestamp, msg.Level, key.hash, msg.Content)
+		p.onMsgCb(msg.Timestamp, level, key.hash, content, attributes)
 	}
 	stat.messages++
+}
+
+func (p *Parser) parseJsonLog(content string) *JsonLog {
+	if !p.parseJson {
+		return nil
+	}
+	return ParseJsonLog(content)
 }
 
 func (p *Parser) getPatternStat(level Level, pattern *Pattern, sample string) (*patternStat, patternKey) {

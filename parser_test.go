@@ -9,6 +9,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParserJson(t *testing.T) {
+	line := `{"level":"error","msg":"payment failed","order_id":"ord-1"}`
+
+	var gotLevel Level
+	var gotMsg string
+	var gotAttrs map[string]string
+	cb := func(ts time.Time, level Level, patternHash string, msg string, attributes map[string]string) {
+		gotLevel, gotMsg, gotAttrs = level, msg, attributes
+	}
+
+	p := &Parser{
+		patterns:              map[patternKey]*patternStat{},
+		patternsPerLevel:      map[Level]int{},
+		patternsPerLevelLimit: 10,
+		parseJson:             true,
+		onMsgCb:               cb,
+	}
+	p.inc(Message{Timestamp: time.Now(), Content: line, Level: LevelUnknown})
+	assert.Equal(t, LevelError, gotLevel)
+	assert.Equal(t, "payment failed", gotMsg)
+	assert.Equal(t, map[string]string{"order_id": "ord-1"}, gotAttrs)
+
+	p = &Parser{
+		patterns:              map[patternKey]*patternStat{},
+		patternsPerLevel:      map[Level]int{},
+		patternsPerLevelLimit: 10,
+		onMsgCb:               cb,
+	}
+	p.inc(Message{Timestamp: time.Now(), Content: line, Level: LevelError})
+	assert.Equal(t, LevelError, gotLevel)
+	assert.Equal(t, line, gotMsg)
+	assert.Nil(t, gotAttrs)
+}
+
 func TestParserCardinalityLimit(t *testing.T) {
 	p := &Parser{
 		patterns:              map[patternKey]*patternStat{},
