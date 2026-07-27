@@ -124,6 +124,12 @@ func (m *MultilineCollector) isNextMessage(l string) bool {
 		return false
 	}
 
+	// a complete JSON object is always a standalone message (JSON loggers
+	// write one object per line)
+	if strings.HasPrefix(l, `{"`) && strings.HasSuffix(l, "}") {
+		return true
+	}
+
 	if m.isFirstLineContainsTimestamp {
 		return containsTimestamp(l)
 	}
