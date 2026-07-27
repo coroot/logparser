@@ -124,6 +124,10 @@ func (m *MultilineCollector) isNextMessage(l string) bool {
 		return false
 	}
 
+	if strings.HasPrefix(l, `{"`) && strings.HasSuffix(l, "}") {
+		return true
+	}
+
 	if m.isFirstLineContainsTimestamp {
 		return containsTimestamp(l)
 	}

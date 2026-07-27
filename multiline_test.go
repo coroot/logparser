@@ -47,6 +47,20 @@ Order response: {"timestamp":1648205755430,"status":406,"error":"Not Acceptable"
 	assert.Equal(t, strings.Split(data, "\n")[1], msgs[1].Content)
 }
 
+func TestMultilineCollectorJsonLines(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	m := NewMultilineCollector(ctx, 10*time.Millisecond, multilineCollectorLimit)
+	defer cancel()
+	data := `{"hit":false,"key":"cart:user-1664","level":"debug","msg":"cache lookup","time":"2026-07-27T13:46:33Z"}
+{"error":"upstream returned status 503","level":"error","msg":"request to upstream failed","time":"2026-07-27T13:46:34Z","upstream":"product-catalog"}
+{"currency":"USD","items":8,"level":"info","msg":"order created","order_id":"ord-003007","time":"2026-07-27T13:46:34Z","total":413.98,"user_id":"user-4735"}`
+	msgs := writeByLine(m, data, time.Unix(0, 0))
+	require.Len(t, msgs, 3)
+	for i, line := range strings.Split(data, "\n") {
+		assert.Equal(t, line, msgs[i].Content)
+	}
+}
+
 func TestMultilineCollectorPython(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := NewMultilineCollector(ctx, 10*time.Millisecond, multilineCollectorLimit)
