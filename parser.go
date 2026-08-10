@@ -4,11 +4,16 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 var (
 	unclassifiedPatternLabel = "unclassified pattern (pattern limit reached)"
 	unclassifiedPatternHash  = "00000000000000000000000000000000"
+
+	sampledPatternLabel = "event was sampled"
+	sampledPatternHash  = "11111111111111111111111111111111"
 )
 
 type LogEntry struct {
@@ -36,6 +41,8 @@ type Parser struct {
 
 	parseJson bool
 
+	limiter *rate.Limiter
+
 	stop func()
 
 	onMsgCb OnMsgCallbackF
@@ -43,13 +50,14 @@ type Parser struct {
 
 type OnMsgCallbackF func(ts time.Time, level Level, patternHash string, msg string, attributes map[string]string)
 
-func NewParser(ch <-chan LogEntry, decoder Decoder, onMsgCallback OnMsgCallbackF, multilineCollectorTimeout time.Duration, patternsPerLevelLimit int, parseJson bool) *Parser {
+func NewParser(ch <-chan LogEntry, decoder Decoder, onMsgCallback OnMsgCallbackF, multilineCollectorTimeout time.Duration, patternsPerLevelLimit int, parseJson bool, limiter *rate.Limiter) *Parser {
 	p := &Parser{
 		decoder:               decoder,
 		patterns:              map[patternKey]*patternStat{},
 		patternsPerLevel:      map[Level]int{},
 		patternsPerLevelLimit: patternsPerLevelLimit,
 		parseJson:             parseJson,
+		limiter:               limiter,
 		onMsgCb:               onMsgCallback,
 	}
 	ctx, stop := context.WithCancel(context.Background())
@@ -117,6 +125,17 @@ func (p *Parser) inc(msg Message) {
 		if p.onMsgCb != nil {
 			p.onMsgCb(msg.Timestamp, level, "", content, attributes)
 		}
+		return
+	}
+
+	if p.limiter != nil && !p.limiter.Allow() {
+		key := patternKey{level: level, hash: sampledPatternHash}
+		stat := p.patterns[key]
+		if stat == nil {
+			stat = &patternStat{sample: sampledPatternLabel}
+			p.patterns[key] = stat
+		}
+		stat.messages++
 		return
 	}
 
