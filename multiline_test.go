@@ -422,3 +422,17 @@ func TestMultilineCollectorLimit(t *testing.T) {
 	assert.Equal(t, 97, len(msgs[0].Content))
 	assert.True(t, utf8.ValidString(msgs[0].Content))
 }
+
+func TestMultilineCollectorReportedLevel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	m := NewMultilineCollector(ctx, 10*time.Millisecond, multilineCollectorLimit)
+	defer cancel()
+
+	m.Add(LogEntry{Timestamp: time.Unix(0, 0), Content: "Memory: avail=27.3G, total=31.1G, warnings=1.0G/500M/100M", Level: LevelInfo})
+	msg := <-m.Messages
+	assert.Equal(t, LevelInfo, msg.Level) // the reported level wins over the guess ("warnings")
+
+	m.Add(LogEntry{Timestamp: time.Unix(1, 0), Content: "ERROR: relation does not exist"})
+	msg = <-m.Messages
+	assert.Equal(t, LevelError, msg.Level) // guessed when no level is reported
+}
