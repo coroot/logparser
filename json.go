@@ -33,7 +33,7 @@ var (
 		"levelname":     7,
 	}
 	jsonTimestampKeys = map[string]bool{
-		"time": true, "timestamp": true, "ts": true, "@t": true, "@timestamp": true, "datetime": true, "asctime": true,
+		"time": true, "timestamp": true, "ts": true, "t": true, "@t": true, "@timestamp": true, "datetime": true, "asctime": true,
 	}
 )
 
@@ -89,16 +89,28 @@ func ParseJsonLog(content string) *JsonLog {
 				}
 				continue
 			}
-		} else if jsonTimestampKeys[lk] {
-			switch v.(type) {
-			case string, json.Number:
-				continue
-			}
+		} else if jsonTimestampKeys[lk] && jsonIsTimestampValue(v) {
+			continue
 		}
 		flattenJsonField(k, v, res.Attributes, jsonMaxDepth)
 	}
 	res.Message = strings.TrimSuffix(msgVal, "\n")
 	return res
+}
+
+func jsonIsTimestampValue(v any) bool {
+	switch value := v.(type) {
+	case string, json.Number:
+		return true
+	case map[string]any:
+		if len(value) != 1 {
+			return false
+		}
+		if _, ok := value["$date"]; ok { // mongodb
+			return true
+		}
+	}
+	return false
 }
 
 func jsonLevelFromValue(v any) Level {

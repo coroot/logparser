@@ -125,9 +125,9 @@ func TestParseJsonLogKeyPriority(t *testing.T) {
 }
 
 func TestParseJsonLogNestedAndArrays(t *testing.T) {
-	l := ParseJsonLog(`{"msg":"m","http":{"method":"GET","response":{"status":200}},"tags":["a","b"],"ok":true,"ref":null}`)
+	l := ParseJsonLog(`{"msg":"m","t":{"$date":"2026-09-17T10:15:22.123+00:00"},"http":{"method":"GET","response":{"status":200}},"tags":["a","b"],"ok":true,"ref":null}`)
 	require.NotNil(t, l)
-	assert.Equal(t, map[string]string{
+	assert.Equal(t, map[string]string{ // the mongodb-style "t" timestamp object is dropped
 		"http.method":          "GET",
 		"http.response.status": "200",
 		"tags":                 `["a","b"]`,
